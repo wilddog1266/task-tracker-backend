@@ -6,6 +6,7 @@ import com.example.Repetition_7.request.UpdateTaskRequest;
 import com.example.Repetition_7.service.TaskService;
 import com.example.Repetition_7.validation.TaskPageableValidator;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api")
 @RequiredArgsConstructor
 @Tag(name = "Tasks", description = "Operations related to task management")
+@SecurityRequirement(name = "bearerAuth")
 @Validated
 public class TaskController {
 
