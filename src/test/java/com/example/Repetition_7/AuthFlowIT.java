@@ -32,6 +32,10 @@ public class AuthFlowIT extends BaseIntegrationTest {
     private final static String USERNAME = "testuser";
     private final static String PASSWORD = "password123";
 
+    private final static String ADMIN_USERNAME = "admin";
+    private final static String ADMIN_PASSWORD = "admin123";
+
+
     @BeforeEach
     public void setUpUser() {
         userRepository.findByUsername(USERNAME).ifPresent(entity -> userRepository.delete(entity));
@@ -44,13 +48,25 @@ public class AuthFlowIT extends BaseIntegrationTest {
         userRepository.flush();
     }
 
+    @BeforeEach
+    public void setUpAdmin() {
+        userRepository.findByUsername(ADMIN_USERNAME).ifPresent(entity -> userRepository.delete(entity));
+
+        UserEntity user = new UserEntity();
+        user.setUsername(ADMIN_USERNAME);
+        user.setPasswordHash(passwordEncoder.encode(ADMIN_PASSWORD));
+        user.setRole(UserRole.ADMIN);
+        userRepository.save(user);
+        userRepository.flush();
+    }
+
     @Test
     public void login_ShouldReturnAccessToken_andRefreshCookie() throws Exception {
        AuthTokens tokens = doLogin(USERNAME, PASSWORD);
 
         assertThat(tokens.accessToken()).isNotBlank();
         assertThat(tokens.refreshTokenValue()).isNotNull();
-        assertThat(tokens.refreshTokenValue().contains("HttpOnly"));
+        assertThat(tokens.setCookie().contains("HttpOnly"));
     }
 
     @Test
@@ -91,11 +107,14 @@ public class AuthFlowIT extends BaseIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
-    private MvcResult doGetWithBearer(String url, String accessToken) throws Exception {
-        return mockMvc.perform(get(url)
-                .header("Authorization", "Bearer " + accessToken)
+    @Test
+    public void users_WithAdminToken_ShouldReturn200() throws Exception {
+        AuthTokens login = doLogin(ADMIN_USERNAME, ADMIN_PASSWORD);
+
+        mockMvc.perform(get("/api/admin/users")
+                .header("Authorization", "Bearer " + login.accessToken())
                 .accept(MediaType.APPLICATION_JSON))
-                .andReturn();
+                .andExpect(status().isOk());
     }
 
     private AuthTokens doLogin(String username, String password) throws Exception {
